@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js";
 
 // === CONFIG ===
-const adminEmail = "your-admin-email@example.com"; // <== replace with YOUR Firebase admin email
+const adminEmail = "graysonjarrod@gmail.com"; // <== replace with YOUR Firebase admin email
 
 // === DOM ELEMENTS ===
 const dateEl = document.getElementById("event-date");
