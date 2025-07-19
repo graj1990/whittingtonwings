@@ -2,16 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Whittington Wings</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <!-- Your Firebase config + app logic -->
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="main.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h1>Whittington Wings</h1>
-    <p class="tagline">Coming This Fall 🔥</p>
-    <p class="subtitle">Currently Under Construction</p>
-    <img src="WhittingtonWingsLogo.png" alt="Whittington Wings Logo" class="mascot" />
+    <img src="WhittingtonWingsLogo.png" alt="Whittington Wings Logo" class="logo" />
+
+    <section id="next-wing-night">
+      <h2>Next Wing Night 🍗</h2>
+      <p><strong>Date:</strong> <span id="event-date">Loading...</span></p>
+      <p><strong>Location:</strong> <span id="event-location">Loading...</span></p>
+      <div id="admin-form" style="display: none;">
+        <h3>Edit Next Wing Night</h3>
+        <label>Date: <input type="date" id="edit-date" /></label><br/>
+        <label>Location: <input type="text" id="edit-location" /></label><br/>
+        <button id="save-event">Save</button>
+      </div>
+    </section>
   </div>
 </body>
 </html>
