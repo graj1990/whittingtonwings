@@ -1,26 +1,44 @@
 body {
   font-family: Arial, sans-serif;
-  background-color: #fdf5ec;
+  background-color: #fff6ed;
   margin: 0;
   padding: 0;
   text-align: center;
+  color: #333;
 }
 
 .container {
-  padding: 30px 20px;
+  padding: 20px;
 }
 
 .logo {
-  max-width: 220px;
-  height: auto;
-  margin-bottom: 20px;
+  width: 200px;
+  max-width: 80%;
+  margin: 20px auto;
+  display: block;
 }
 
-.section {
-  background-color: #fffaf3;
-  padding: 25px;
+.card {
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   margin: 30px auto;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-  max-width: 500px;
+  padding: 20px;
+  max-width: 400px;
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #e74c3c;
+}
+
+ul#leaderboard-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+ul#leaderboard-list li {
+  padding: 8px 0;
+  font-size: 1.1em;
 }
