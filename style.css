@@ -1,38 +1,95 @@
+/* Base styling */
 body {
   margin: 0;
+  padding: 1rem;
   font-family: 'Segoe UI', sans-serif;
   background-color: #fff8f0;
   color: #222;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
   text-align: center;
 }
 
 .container {
-  padding: 1em;
-  max-width: 500px;
+  max-width: 600px;
+  width: 100%;
 }
 
-h1 {
-  font-size: 2.5em;
-  margin-bottom: 0.2em;
+/* Logo */
+.logo {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 1.5rem;
+}
+
+/* Section Titles */
+h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
   color: #d62828;
 }
 
-.tagline {
-  font-size: 1.5em;
-  margin-bottom: 0.5em;
+/* Info Display */
+#next-wing-night p {
+  font-size: 1.1rem;
+  margin: 0.25rem 0;
 }
 
-.subtitle {
-  font-size: 1.1em;
-  color: #555;
+/* Admin Form */
+#admin-form {
+  margin-top: 1.5rem;
+  border-top: 1px dashed #999;
+  padding-top: 1rem;
 }
 
-.mascot {
-  max-width: 100%;
-  height: auto;
-  margin-top: 1em;
+#admin-form h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+#admin-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+#admin-form input {
+  padding: 0.4rem;
+  font-size: 1rem;
+  width: 90%;
+  max-width: 300px;
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+#save-event {
+  padding: 0.6rem 1.2rem;
+  background-color: #d62828;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#save-event:hover {
+  background-color: #a51c1c;
+}
+
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  #save-event {
+    width: 100%;
+  }
 }
