@@ -23,20 +23,25 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Load Leaderboard
-  db.collection("siteData").doc("leaderboard").get().then((doc) => {
-    if (doc.exists) {
-      const winners = doc.data().Winners || [];
-      winners.sort((a, b) => b.wins - a.wins);
-      const container = document.getElementById("leaderboardContent");
-      container.innerHTML = "";
-      winners.forEach((winner, index) => {
-        const div = document.createElement("div");
-        div.textContent = `${index + 1}. ${winner.name} - ${winner.wins} wins`;
-        container.appendChild(div);
-      });
-    }
-  });
+// Load Leaderboard
+db.collection("siteData").doc("leaderboard").get().then((doc) => {
+  if (doc.exists) {
+    const winners = doc.data().Winners || [];
+    winners.sort((a, b) => b.wins - a.wins);
+    const container = document.getElementById("leaderboardContent");
+    container.innerHTML = "";
+    winners.forEach((winner, index) => {
+      const div = document.createElement("div");
+      let medal = '';
+      if (index === 0) medal = ' 🥇';
+      else if (index === 1) medal = ' 🥈';
+      else if (index === 2) medal = ' 🥉';
+
+      div.innerHTML = `${index + 1}. ${winner.name} - ${winner.wins} wins${medal}`;
+      container.appendChild(div);
+    });
+  }
+});
 
   // Wing Commandments Read More Toggle
   const commandmentsText = `
