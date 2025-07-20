@@ -14,6 +14,46 @@ document.addEventListener("DOMContentLoaded", function () {
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
+
+const signInBtn = document.getElementById("signInBtn");
+const signOutBtn = document.getElementById("signOutBtn");
+const userDisplay = document.getElementById("userDisplay");
+
+// Sign In
+signInBtn.addEventListener("click", () => {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      // Signed in
+    })
+    .catch((error) => {
+      console.error("Sign in error", error);
+    });
+});
+
+// Sign Out
+signOutBtn.addEventListener("click", () => {
+  signOut(auth);
+});
+
+// Monitor Auth State
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    signInBtn.style.display = "none";
+    signOutBtn.style.display = "inline-block";
+    userDisplay.textContent = `Signed in as: ${user.displayName}`;
+    window.currentUser = user;
+  } else {
+    signInBtn.style.display = "inline-block";
+    signOutBtn.style.display = "none";
+    userDisplay.textContent = "";
+    window.currentUser = null;
+  }
+});
+  
   // Load Next Wing Night
   db.collection("siteData").doc("wingNight").get().then((doc) => {
     if (doc.exists) {
