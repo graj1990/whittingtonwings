@@ -33,11 +33,11 @@ db.collection("siteData").doc("leaderboard").get().then((doc) => {
     winners.forEach((winner, index) => {
       const div = document.createElement("div");
       let medal = '';
-      if (index === 0) medal = ' 🥇';
-      else if (index === 1) medal = ' 🥈';
-      else if (index === 2) medal = ' 🥉';
+      if (index === 0) medal = '🥇';
+      else if (index === 1) medal = '🥈';
+      else if (index === 2) medal = '🥉';
 
-      div.innerHTML = `${index + 1}. ${winner.name} - ${winner.wins} wins${medal}`;
+      div.innerHTML = `${medal} ${winner.name} - ${winner.wins} wins`;
       container.appendChild(div);
     });
   }
