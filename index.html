@@ -2,52 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Whittington Wings</title>
-  <link rel="stylesheet" href="style.css" />
-  <script type="module" src="main.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <div class="container">
     <img src="logo.png" alt="Whittington Wings Logo" class="logo" />
 
-    <section class="card" id="wingNight">
+    <!-- Next Wing Night -->
+    <div class="card">
       <h2>Next Wing Night 🍗</h2>
       <p><strong>Date:</strong> <span id="wingDate">Loading...</span></p>
       <p><strong>Location:</strong> <span id="wingLocation">Loading...</span></p>
-    </section>
+    </div>
 
-    <section class="card" id="leaderboard">
+    <!-- Leaderboard -->
+    <div class="card">
       <h2>Leaderboard 🏆</h2>
-      <ul id="winnersList">Loading...</ul>
-    </section>
+      <div id="leaderboardContent">Loading...</div>
+    </div>
 
-    <section class="card" id="charter">
+    <!-- Wing Commandments -->
+    <div class="card">
       <h2>🍗 The Wing Commandments 🍗</h2>
-      <div id="charterPreview">
-        <p>Once a month, the Wing Disciples gather...</p>
-        <button id="expandCharter">Read More</button>
-      </div>
-      <div id="charterFull" style="display:none">
-        <p>Once a month, the Wing Disciples gather. Each contender brings their own wings — marinated, seasoned, or sauced in secrecy.</p>
-        <p>The host provides the grill, the drinks, and the arena. One by one, each contender takes their turn at the grill, cooking their wings to crispy, saucy perfection.</p>
-        <p>Wings are served in rounds — hot off the grill — and sampled by all.</p>
-        <p>When the final bite is eaten, the voting begins. Everyone gets one vote (and no, you can’t vote for yourself).</p>
-        <p>The contender with the most votes claims the win. No cash. No trophy. Just pride, trash talk rights, and a place on the leaderboard.</p>
-        <p>Victory isn’t given — it’s earned.</p>
-        <button id="collapseCharter">Show Less</button>
-      </div>
-    </section>
+      <p id="commandmentsText">Loading...</p>
+      <button id="readMoreBtn">Read More</button>
+    </div>
 
-    <section class="card" id="chat">
+    <!-- Chat Section -->
+    <div class="card">
       <h2>Wing Talk 🗣️</h2>
       <div id="chatMessages" class="chat-box">Loading...</div>
-      <form id="chatForm">
-        <input type="text" id="chatName" placeholder="Your name" required />
-        <input type="text" id="chatMessage" placeholder="Your message" required />
-        <button type="submit">Send</button>
-      </form>
-    </section>
+      <input type="text" id="nameInput" placeholder="Your name" />
+      <input type="text" id="messageInput" placeholder="Your message" />
+      <button id="sendMessage">Send</button>
+    </div>
   </div>
+
+  <script src="main.js"></script>
 </body>
 </html>
