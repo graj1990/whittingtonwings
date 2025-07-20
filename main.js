@@ -1,7 +1,16 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  orderBy,
+  addDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCLO-NW-9rATuKwhiXPY4XOhUmO7En-vLo",
   authDomain: "whittingtonwings.firebaseapp.com",
@@ -12,81 +21,99 @@ const firebaseConfig = {
   measurementId: "G-WQ60E2HDEF"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Load Next Wing Night
 async function loadWingNightData() {
-  const docRef = doc(db, "siteData", "wingNight");
-
   try {
+    const docRef = doc(db, "siteData", "wingNight");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const data = docSnap.data();
-      document.getElementById("date").textContent = data.date || "TBD";
-      document.getElementById("location").textContent = data.location || "TBD";
+      document.getElementById("wing-date").textContent = docSnap.data().date || "Unknown";
+      document.getElementById("wing-location").textContent = docSnap.data().location || "Unknown";
     } else {
-      throw new Error("No such document");
+      throw new Error("Document not found");
     }
-  } catch (err) {
-    console.error("Error loading data:", err.message);
-    document.getElementById("date").textContent = "Error";
-    document.getElementById("location").textContent = "Error";
+  } catch (error) {
+    console.error("Error loading data:", error);
+    document.getElementById("wing-date").textContent = "Error";
+    document.getElementById("wing-location").textContent = "Error";
   }
 }
 
-// Load Leaderboard
-async function loadLeaderboardData() {
-  const docRef = doc(db, "siteData", "leaderboard");
-
+async function loadLeaderboard() {
   try {
+    const docRef = doc(db, "siteData", "leaderboard");
     const docSnap = await getDoc(docRef);
+    const container = document.getElementById("leaderboard");
+    container.innerHTML = "";
     if (docSnap.exists()) {
-      const data = docSnap.data();
-      const winners = data.Winners || [];
-
-      // Sort by wins descending
+      const winners = docSnap.data().Winners || [];
       winners.sort((a, b) => b.wins - a.wins);
-
-      const list = document.getElementById("leaderboard-list");
-      list.innerHTML = "";
-
-      const medals = ["🥇", "🥈", "🥉"];
-
-      winners.forEach((person, index) => {
-        const li = document.createElement("li");
-        const medal = medals[index] || "";
-        li.textContent = `${medal} ${person.name} - ${person.wins} wins`;
-        list.appendChild(li);
+      winners.forEach((winner, index) => {
+        const div = document.createElement("div");
+        div.className = "winner";
+        div.innerHTML = `<strong>#${index + 1}</strong> ${winner.name} - ${winner.wins} wins`;
+        container.appendChild(div);
       });
-    } else {
-      throw new Error("No leaderboard document found");
     }
-  } catch (err) {
-    console.error("Error loading leaderboard:", err.message);
-    const list = document.getElementById("leaderboard-list");
-    list.innerHTML = "<li>Error loading leaderboard</li>";
+  } catch (error) {
+    console.error("Error loading leaderboard:", error);
   }
 }
 
-// Expand/Collapse Wing Commandments
-document.addEventListener("DOMContentLoaded", () => {
-  const preview = document.getElementById("commandments-preview");
-  const full = document.getElementById("commandments-full");
-  const expandBtn = document.getElementById("toggle-commandments");
-  const collapseBtn = document.getElementById("toggle-less");
-
-  expandBtn?.addEventListener("click", () => {
-    preview.style.display = "none";
-    full.style.display = "block";
+function setupCommandmentsToggle() {
+  const toggleBtn = document.getElementById("toggle-charter");
+  const fullText = document.getElementById("charter-text");
+  toggleBtn.addEventListener("click", () => {
+    fullText.classList.toggle("hidden");
+    toggleBtn.textContent = fullText.classList.contains("hidden") ? "Show more" : "Show less";
   });
+}
 
-  collapseBtn?.addEventListener("click", () => {
-    full.style.display = "none";
-    preview.style.display = "block";
-  });
+async function loadChatMessages() {
+  try {
+    const messagesRef = collection(db, "siteData", "messages", "messages");
+    const q = query(messagesRef, orderBy("timestamp", "asc"));
+    const querySnapshot = await getDocs(q);
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML = "";
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const message = document.createElement("div");
+      message.classList.add("chat-message");
+      message.innerHTML = `<strong>${data.name}:</strong> ${data.message}`;
+      chatBox.appendChild(message);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+  } catch (error) {
+    console.error("Error loading chat:", error);
+  }
+}
 
-  loadWingNightData();
-  loadLeaderboardData();
-});
+async function sendMessage(event) {
+  event.preventDefault();
+  const name = document.getElementById("chat-name").value.trim();
+  const message = document.getElementById("chat-message").value.trim();
+  if (!name || !message) return;
+
+  try {
+    const messagesRef = collection(db, "siteData", "messages", "messages");
+    await addDoc(messagesRef, {
+      name,
+      message,
+      timestamp: serverTimestamp()
+    });
+    document.getElementById("chat-message").value = "";
+    loadChatMessages();
+  } catch (error) {
+    console.error("Error sending message:", error);
+  }
+}
+
+document.getElementById("chat-form").addEventListener("submit", sendMessage);
+
+loadWingNightData();
+loadLeaderboard();
+setupCommandmentsToggle();
+loadChatMessages();
