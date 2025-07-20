@@ -51,22 +51,24 @@
     </div>
 
     <!-- Chat Section -->
-    <div class="card">
+    <div class="card chat-container">
       <h2>Wing Talk 🗣️</h2>
       
-      <div id="authSection" style="margin-bottom: 12px;">
-        <button id="signInBtn" class="modern-btn">Sign In with Google</button>
-        <button id="signOutBtn" class="modern-btn" style="display: none;">Sign Out</button>
-        <p id="userDisplay" style="margin-top: 10px;"></p>
+      <!-- Auth Required Prompt -->
+      <div id="authNotice" class="auth-warning" style="display: none;">
+        You must be signed in with Google to participate in the chat.
       </div>
     
-      <div id="chatMessages" class="chat-box">Loading...</div>
+      <!-- Chat Messages -->
+      <div id="chatMessages" class="chat-box">Loading messages...</div>
+      
+      <!-- Load More Messages Button -->
+      <button id="loadMoreMessagesBtn" class="modern-btn">Load More</button>
     
-      <button id="loadMoreMessagesBtn" class="modern-btn">Load More Messages</button>
-    
-      <div style="margin-top: 10px;">
-        <input type="text" id="messageInput" placeholder="Your message" />
-        <button id="sendMessage" class="modern-btn">Send</button>
+      <!-- Message Input Area -->
+      <div class="chat-input-container">
+        <input type="text" id="messageInput" placeholder="Type your message..." disabled />
+        <button id="sendMessage" class="modern-btn" disabled>Send</button>
       </div>
     </div>
 
