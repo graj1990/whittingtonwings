@@ -120,3 +120,19 @@ db.collection("siteData").doc("leaderboard").get().then((doc) => {
     });
   }
 });
+
+document.getElementById("toggleCommandments").addEventListener("click", function () {
+  const collapsed = document.getElementById("collapsedWingText");
+  const full = document.getElementById("fullWingText");
+  const button = this;
+
+  if (full.style.display === "none") {
+    collapsed.style.display = "none";
+    full.style.display = "block";
+    button.textContent = "Show Less";
+  } else {
+    collapsed.style.display = "block";
+    full.style.display = "none";
+    button.textContent = "Read More";
+  }
+});
