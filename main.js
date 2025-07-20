@@ -70,5 +70,23 @@ async function loadLeaderboardData() {
   }
 }
 
-loadWingNightData();
-loadLeaderboardData();
+// Expand/Collapse Wing Commandments
+document.addEventListener("DOMContentLoaded", () => {
+  const preview = document.getElementById("commandments-preview");
+  const full = document.getElementById("commandments-full");
+  const expandBtn = document.getElementById("toggle-commandments");
+  const collapseBtn = document.getElementById("toggle-less");
+
+  expandBtn?.addEventListener("click", () => {
+    preview.style.display = "none";
+    full.style.display = "block";
+  });
+
+  collapseBtn?.addEventListener("click", () => {
+    full.style.display = "none";
+    preview.style.display = "block";
+  });
+
+  loadWingNightData();
+  loadLeaderboardData();
+});
