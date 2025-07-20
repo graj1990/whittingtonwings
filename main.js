@@ -14,46 +14,41 @@ document.addEventListener("DOMContentLoaded", function () {
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+  // Firebase Auth via CDN
+  const auth = firebase.auth();
+  const provider = new firebase.auth.GoogleAuthProvider();
 
-const auth = getAuth();
-const provider = new GoogleAuthProvider();
+  const signInBtn = document.getElementById("signInBtn");
+  const signOutBtn = document.getElementById("signOutBtn");
+  const userDisplay = document.getElementById("userDisplay");
 
-const signInBtn = document.getElementById("signInBtn");
-const signOutBtn = document.getElementById("signOutBtn");
-const userDisplay = document.getElementById("userDisplay");
-
-// Sign In
-signInBtn.addEventListener("click", () => {
-  signInWithPopup(auth, provider)
-    .then((result) => {
-      // Signed in
-    })
-    .catch((error) => {
+  // Sign In
+  signInBtn.addEventListener("click", () => {
+    auth.signInWithPopup(provider).catch((error) => {
       console.error("Sign in error", error);
     });
-});
+  });
 
-// Sign Out
-signOutBtn.addEventListener("click", () => {
-  signOut(auth);
-});
+  // Sign Out
+  signOutBtn.addEventListener("click", () => {
+    auth.signOut();
+  });
 
-// Monitor Auth State
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    signInBtn.style.display = "none";
-    signOutBtn.style.display = "inline-block";
-    userDisplay.textContent = `Signed in as: ${user.displayName}`;
-    window.currentUser = user;
-  } else {
-    signInBtn.style.display = "inline-block";
-    signOutBtn.style.display = "none";
-    userDisplay.textContent = "";
-    window.currentUser = null;
-  }
-});
-  
+  // Monitor Auth State
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      signInBtn.style.display = "none";
+      signOutBtn.style.display = "inline-block";
+      userDisplay.textContent = `Signed in as: ${user.displayName}`;
+      window.currentUser = user;
+    } else {
+      signInBtn.style.display = "inline-block";
+      signOutBtn.style.display = "none";
+      userDisplay.textContent = "";
+      window.currentUser = null;
+    }
+  });
+
   // Load Next Wing Night
   db.collection("siteData").doc("wingNight").get().then((doc) => {
     if (doc.exists) {
@@ -63,27 +58,27 @@ onAuthStateChanged(auth, (user) => {
     }
   });
 
-// Load Leaderboard
-db.collection("siteData").doc("leaderboard").get().then((doc) => {
-  if (doc.exists) {
-    const winners = doc.data().Winners || [];
-    winners.sort((a, b) => b.wins - a.wins);
-    const container = document.getElementById("leaderboardContent");
-    container.innerHTML = "";
-    winners.forEach((winner, index) => {
-      const div = document.createElement("div");
-      let medal = '';
-      if (index === 0) medal = '🥇';
-      else if (index === 1) medal = '🥈';
-      else if (index === 2) medal = '🥉';
+  // Load Leaderboard
+  db.collection("siteData").doc("leaderboard").get().then((doc) => {
+    if (doc.exists) {
+      const winners = doc.data().Winners || [];
+      winners.sort((a, b) => b.wins - a.wins);
+      const container = document.getElementById("leaderboardContent");
+      container.innerHTML = "";
+      winners.forEach((winner, index) => {
+        const div = document.createElement("div");
+        let medal = '';
+        if (index === 0) medal = '🥇';
+        else if (index === 1) medal = '🥈';
+        else if (index === 2) medal = '🥉';
 
-      div.innerHTML = `${medal} ${winner.name} - ${winner.wins} wins`;
-      container.appendChild(div);
-    });
-  }
-});
+        div.innerHTML = `${medal} ${winner.name} - ${winner.wins} wins`;
+        container.appendChild(div);
+      });
+    }
+  });
 
-  // Wing Commandments Read More Toggle
+  // Wing Commandments Toggle
   const commandmentsText = `
     🍗 The Wing Commandments 🍗
 
@@ -129,7 +124,7 @@ db.collection("siteData").doc("leaderboard").get().then((doc) => {
         snapshot.forEach((doc) => {
           const data = doc.data();
           const div = document.createElement("div");
-          div.innerHTML = `<strong>${data.name}</strong>: ${data.message}`;
+          div.innerHTML = `<strong>${data.senderName || "Anon"}</strong>: ${data.text}`;
           chatBox.appendChild(div);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -140,19 +135,17 @@ db.collection("siteData").doc("leaderboard").get().then((doc) => {
 
   // Chat: Send message
   const sendBtn = document.getElementById("sendMessage");
-  const nameInput = document.getElementById("nameInput");
   const messageInput = document.getElementById("messageInput");
 
-  if (sendBtn && nameInput && messageInput) {
+  if (sendBtn && messageInput) {
     sendBtn.addEventListener("click", () => {
-      const name = nameInput.value.trim();
       const message = messageInput.value.trim();
-
-      if (!name || !message) return;
+      if (!message || !window.currentUser) return;
 
       db.collection("siteData").doc("messages").collection("messages").add({
-        name,
-        message,
+        text: message,
+        senderName: window.currentUser.displayName || "Anonymous",
+        senderId: window.currentUser.uid,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         messageInput.value = "";
@@ -161,6 +154,7 @@ db.collection("siteData").doc("leaderboard").get().then((doc) => {
   }
 });
 
+// Wing Commandments Section Toggle
 document.getElementById("toggleCommandments").addEventListener("click", function () {
   const collapsed = document.getElementById("collapsedWingText");
   const full = document.getElementById("fullWingText");
