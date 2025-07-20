@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Whittington Wings</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Firebase App (core) -->
+  <!-- Firebase Core + Firestore + Auth -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <!-- Firebase Firestore -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <!-- Firebase Auth -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-
 </head>
 <body>
   <div class="container">
+    <!-- Logo -->
     <img src="WhittingtonWingslogo.png" alt="Whittington Wings Logo" class="logo" />
 
     <!-- Next Wing Night -->
@@ -50,28 +48,37 @@
       <button id="toggleCommandments" class="modern-btn">Read More</button>
     </div>
 
-    <!-- Chat Section -->
+    <!-- Wing Talk / Chat Section -->
     <div class="card chat-container">
       <h2>Wing Talk 🗣️</h2>
-      
-      <!-- Auth Required Prompt -->
+
+      <!-- Auth Controls -->
+      <div id="authSection">
+        <button id="signInBtn" class="modern-btn">Sign In with Google</button>
+        <button id="signOutBtn" class="modern-btn" style="display: none;">Sign Out</button>
+        <p id="userDisplay"></p>
+      </div>
+
+      <!-- Auth Notice -->
       <div id="authNotice" class="auth-warning" style="display: none;">
         You must be signed in with Google to participate in the chat.
       </div>
-    
+
       <!-- Chat Messages -->
       <div id="chatMessages" class="chat-box">Loading messages...</div>
-      
-      <!-- Load More Messages Button -->
+
+      <!-- Load More Button -->
       <button id="loadMoreMessagesBtn" class="modern-btn">Load More</button>
-    
-      <!-- Message Input Area -->
+
+      <!-- Chat Input -->
       <div class="chat-input-container">
         <input type="text" id="messageInput" placeholder="Type your message..." disabled />
         <button id="sendMessage" class="modern-btn" disabled>Send</button>
       </div>
     </div>
+  </div>
 
+  <!-- Main Script -->
   <script src="main.js"></script>
 </body>
 </html>
