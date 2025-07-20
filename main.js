@@ -29,18 +29,33 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   auth.onAuthStateChanged((user) => {
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendMessage");
+    const authNotice = document.getElementById("authNotice");
+  
     if (user) {
       signInBtn.style.display = "none";
       signOutBtn.style.display = "inline-block";
       userDisplay.textContent = `Signed in as: ${user.displayName}`;
       window.currentUser = user;
+  
+      // Enable chat input
+      if (messageInput) messageInput.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+      if (authNotice) authNotice.style.display = "none";
     } else {
       signInBtn.style.display = "inline-block";
       signOutBtn.style.display = "none";
       userDisplay.textContent = "";
       window.currentUser = null;
+  
+      // Disable chat input
+      if (messageInput) messageInput.disabled = true;
+      if (sendBtn) sendBtn.disabled = true;
+      if (authNotice) authNotice.style.display = "block";
     }
   });
+
   // Load Wing Night Details
   db.collection("siteData").doc("wingNight").get().then((doc) => {
     if (doc.exists) {
