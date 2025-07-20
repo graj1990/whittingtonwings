@@ -133,14 +133,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   loadMessages();
 
-  // Chat: Send message
+  // Chat: Send message (only if signed in)
   const sendBtn = document.getElementById("sendMessage");
   const messageInput = document.getElementById("messageInput");
 
   if (sendBtn && messageInput) {
     sendBtn.addEventListener("click", () => {
       const message = messageInput.value.trim();
-      if (!message || !window.currentUser) return;
+      if (!message || !window.currentUser) {
+        alert("You must be signed in to send a message.");
+        return;
+      }
 
       db.collection("siteData").doc("messages").collection("messages").add({
         text: message,
