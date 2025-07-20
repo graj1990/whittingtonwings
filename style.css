@@ -19,12 +19,14 @@ body {
 }
 
 .card {
-  background-color: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  margin: 30px auto;
+  background-color: #fff;
   padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
   max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .card h2 {
@@ -49,15 +51,6 @@ ul#leaderboard-list li {
   line-height: 1.6;
 }
 
-/* Wrapped card style */
-.card {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
 /* Modern button */
 .modern-btn {
   margin-top: 12px;
@@ -75,4 +68,14 @@ ul#leaderboard-list li {
 .modern-btn:hover {
   background: linear-gradient(to right, #e07c00, #ffaa33);
   transform: translateY(-1px);
+}
+
+/* Auth buttons spacing */
+#authSection {
+  margin: 20px 0;
+}
+
+#signInBtn,
+#signOutBtn {
+  margin: 10px 5px 0;
 }
