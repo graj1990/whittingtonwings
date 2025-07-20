@@ -106,107 +106,120 @@ document.addEventListener("DOMContentLoaded", function () {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
 
-  function renderMessage(doc, chatBox) {
-    const data = doc.data();
-    const div = document.createElement("div");
-    div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
-    div.dataset.id = doc.id;
-  
-    const time = data.timestamp?.toDate().toLocaleString() || "just now";
-  
-    div.innerHTML = `
-      <div><strong>${data.senderName || "Anon"}</strong> <span style="font-size: 0.8em; color: #888">(${time})</span></div>
-      <div>${data.text}</div>
-      <div class="reactions">
-        <button class="reaction-btn" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
-        <button class="reaction-btn" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
-        <button class="reaction-btn" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
-        <button class="reply-btn">Reply</button>
-      </div>
-    `;
-  
-    // Append or nest
-    if (data.parentId) {
-      const parent = chatBox.querySelector(`[data-id="${data.parentId}"]`);
-      if (parent) parent.appendChild(div);
-      else chatBox.appendChild(div); // fallback
-    } else {
-      chatBox.appendChild(div);
-    }
-  
-    // Reaction click
-    div.querySelectorAll(".reaction-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (!window.currentUser) return alert("Sign in to react.");
-        const emoji = btn.dataset.emoji;
-        db.collection("siteData").doc("messages").collection("messages")
-          .doc(doc.id).update({
-            [`reactions.${emoji}`]: firebase.firestore.FieldValue.increment(1)
-          });
-      });
-    });
-  
-    // Reply click
-    div.querySelector(".reply-btn").addEventListener("click", () => {
-      const reply = prompt("Reply to this message:");
-      if (reply && window.currentUser) {
-        db.collection("siteData").doc("messages").collection("messages").add({
-          text: reply,
-          senderName: window.currentUser.displayName,
-          senderId: window.currentUser.uid,
-          parentId: doc.id,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          reactions: {}
+function renderMessage(doc, messageMap, chatBox) {
+  const data = doc.data();
+  const div = document.createElement("div");
+  div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
+  div.dataset.id = doc.id;
+
+  const time = data.timestamp?.toDate().toLocaleString() || "just now";
+
+  div.innerHTML = `
+    <div><strong>${data.senderName || "Anon"}</strong> <span style="font-size: 0.8em; color: #888">(${time})</span></div>
+    <div>${data.text}</div>
+    <div class="reactions">
+      <button class="reaction-btn" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
+      <button class="reaction-btn" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
+      <button class="reaction-btn" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
+      <button class="reply-btn">Reply</button>
+    </div>
+  `;
+
+  // Reaction logic
+  div.querySelectorAll(".reaction-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!window.currentUser) return alert("Sign in to react.");
+      const emoji = btn.dataset.emoji;
+      db.collection("siteData").doc("messages").collection("messages")
+        .doc(doc.id).update({
+          [`reactions.${emoji}`]: firebase.firestore.FieldValue.increment(1)
         });
-      }
     });
-  }
-  
+  });
+
+  // Reply logic
+  div.querySelector(".reply-btn").addEventListener("click", () => {
+    const reply = prompt("Reply to this message:");
+    if (reply && window.currentUser) {
+      db.collection("siteData").doc("messages").collection("messages").add({
+        text: reply,
+        senderName: window.currentUser.displayName,
+        senderId: window.currentUser.uid,
+        parentId: doc.id,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        reactions: {}
+      });
+    }
+  });
+
+  // Store and return
+  messageMap[doc.id] = { element: div, data };
+
+  return div;
+}
+
   function listenToMessages() {
     const chatBox = document.getElementById("chatMessages");
-    chatBox.innerHTML = "";
+    const messageMap = {};
   
     db.collection("siteData").doc("messages").collection("messages")
       .orderBy("timestamp", "asc")
       .onSnapshot(snapshot => {
         chatBox.innerHTML = "";
-        snapshot.forEach(doc => {
-          renderMessage(doc, chatBox);
+        const docs = snapshot.docs;
+        const topLevel = [];
+  
+        // Render and map all messages
+        docs.forEach(doc => {
+          const data = doc.data();
+          const el = renderMessage(doc, messageMap, chatBox);
+  
+          if (data.parentId) {
+            // Try to attach to parent
+            const parent = messageMap[data.parentId]?.element;
+            if (parent) parent.appendChild(el);
+            else topLevel.push(el); // fallback
+          } else {
+            topLevel.push(el);
+          }
         });
+  
+        // Append top-level messages
+        topLevel.forEach(el => chatBox.appendChild(el));
         chatBox.scrollTop = chatBox.scrollHeight;
       });
   }
   
   listenToMessages();
-
-  function loadMessages(initial = false) {
-    let query = db.collection("siteData").doc("messages").collection("messages")
-      .orderBy("timestamp", "desc")
-      .limit(5);
-
-    if (lastVisible && !initial) {
-      query = query.startAfter(lastVisible);
-    }
-
-    query.get().then((snapshot) => {
-      if (snapshot.empty) {
-        loadMoreBtn.style.display = "none";
-        return;
+  
+    function loadMessages(initial = false) {
+      let query = db.collection("siteData").doc("messages").collection("messages")
+        .orderBy("timestamp", "desc")
+        .limit(5);
+  
+      if (lastVisible && !initial) {
+        query = query.startAfter(lastVisible);
       }
-
-      lastVisible = snapshot.docs[snapshot.docs.length - 1];
-
-      snapshot.docs.reverse().forEach(doc => {
-        if (!loadedMessages.includes(doc.id)) {
-          loadedMessages.push(doc.id);
-          renderMessage(doc);
+  
+      query.get().then((snapshot) => {
+        if (snapshot.empty) {
+          loadMoreBtn.style.display = "none";
+          return;
         }
+  
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+  
+        snapshot.docs.reverse().forEach(doc => {
+          if (!loadedMessages.includes(doc.id)) {
+            loadedMessages.push(doc.id);
+            renderMessage(doc);
+          }
+        });
       });
-    });
-  }
-
-  loadMoreBtn.addEventListener("click", () => loadMessages());
-  loadMessages(true);
+    }
+  
+    loadMoreBtn.addEventListener("click", () => loadMessages());
+    loadMessages(true);
 
   sendBtn.addEventListener("click", () => {
     const text = messageInput.value.trim();
