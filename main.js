@@ -41,8 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
       window.currentUser = null;
     }
   });
-
-  // Wing Night + Leaderboard
+  // Load Wing Night Details
   db.collection("siteData").doc("wingNight").get().then((doc) => {
     if (doc.exists) {
       const data = doc.data();
@@ -51,6 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Load Leaderboard
   db.collection("siteData").doc("leaderboard").get().then((doc) => {
     if (doc.exists) {
       const winners = doc.data().Winners || [];
@@ -67,7 +67,20 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Wing Commandments Toggle
-  const commandmentsText = `🍗 The Wing Commandments 🍗 ... Victory isn’t given — it’s earned.`;
+  const commandmentsText = `🍗 The Wing Commandments 🍗
+
+  Once a month, the Wing contenders gather. Each contender brings their own wings — marinated, seasoned, or sauced in secrecy.
+
+  The host provides the grill, the drinks, and the arena. One by one, each contender takes their turn at the grill, cooking their wings to crispy, saucy perfection.
+
+  Wings are served in rounds — hot off the grill — and sampled by all.
+
+  When the final bite is eaten, the voting begins. Everyone gets one vote (and no, you can’t vote for yourself).
+
+  The contender with the most votes claims the win. No cash. No trophy. Just pride, trash talk rights, and a place on the leaderboard.
+
+  Victory isn’t given — it’s earned.`;
+
   const shortText = "Once a month, the Wing contenders gather...";
   const commandmentsPara = document.getElementById("commandmentsText");
   const readMoreBtn = document.getElementById("readMoreBtn");
@@ -80,23 +93,28 @@ document.addEventListener("DOMContentLoaded", function () {
       readMoreBtn.textContent = isMore ? "Show Less" : "Read More";
     });
   }
-
-  // Chat Message Logic
+  // Chat functionality
   const chatBox = document.getElementById("chatMessages");
   const sendBtn = document.getElementById("sendMessage");
   const messageInput = document.getElementById("messageInput");
   const loadMoreBtn = document.getElementById("loadMoreMessagesBtn");
-
   let lastVisible = null;
   let loadedMessages = [];
+
+  function formatTimestamp(timestamp) {
+    const date = timestamp.toDate();
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  }
 
   function renderMessage(doc) {
     const data = doc.data();
     const div = document.createElement("div");
-    div.className = "chat-message";
+    div.className = data.parentId ? "chat-reply chat-message" : "chat-message";
     div.dataset.id = doc.id;
+
     div.innerHTML = `
-      <strong>${data.senderName || "Anon"}</strong>: ${data.text}
+      <div><strong>${data.senderName || "Anon"}</strong> <span style="color:#777; font-size: 0.8em;">(${formatTimestamp(data.timestamp)})</span></div>
+      <div>${data.text}</div>
       <div class="reactions">
         <button class="reaction-btn" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
         <button class="reaction-btn" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
@@ -105,20 +123,18 @@ document.addEventListener("DOMContentLoaded", function () {
       </div>
     `;
 
-    // Replies
-    if (data.parentId) {
-      div.classList.add("chat-reply");
-    }
-
-    // Append replies under parent
     if (data.parentId) {
       const parent = chatBox.querySelector(`[data-id="${data.parentId}"]`);
-      if (parent) parent.appendChild(div);
+      if (parent) {
+        parent.appendChild(div);
+      } else {
+        chatBox.appendChild(div);
+      }
     } else {
-      chatBox.insertBefore(div, chatBox.firstChild);
+      chatBox.appendChild(div);
     }
 
-    // Reaction handling
+    // Reaction logic
     div.querySelectorAll(".reaction-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         if (!window.currentUser) return alert("Sign in to react.");
@@ -130,16 +146,18 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-    // Reply handling
+    // Reply logic
     div.querySelector(".reply-btn").addEventListener("click", () => {
-      const reply = prompt("Reply to this message:");
-      if (reply && window.currentUser) {
+      if (!window.currentUser) return alert("Sign in to reply.");
+      const reply = prompt("Your reply:");
+      if (reply) {
         db.collection("siteData").doc("messages").collection("messages").add({
           text: reply,
           senderName: window.currentUser.displayName,
           senderId: window.currentUser.uid,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           parentId: doc.id,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          reactions: {}
         });
       }
     });
@@ -174,12 +192,11 @@ document.addEventListener("DOMContentLoaded", function () {
   loadMoreBtn.addEventListener("click", () => loadMessages());
   loadMessages(true);
 
-  // Chat Submission
   sendBtn.addEventListener("click", () => {
     const text = messageInput.value.trim();
     if (!text) return;
     if (!window.currentUser) {
-      alert("Sign in to send a message.");
+      alert("You must be signed in to send messages.");
       return;
     }
 
@@ -193,4 +210,21 @@ document.addEventListener("DOMContentLoaded", function () {
       messageInput.value = "";
     });
   });
+});
+
+// Wing Commandments Section Toggle
+document.getElementById("toggleCommandments").addEventListener("click", function () {
+  const collapsed = document.getElementById("collapsedWingText");
+  const full = document.getElementById("fullWingText");
+  const button = this;
+
+  if (full.style.display === "none") {
+    collapsed.style.display = "none";
+    full.style.display = "block";
+    button.textContent = "Show Less";
+  } else {
+    collapsed.style.display = "block";
+    full.style.display = "none";
+    button.textContent = "Read More";
+  }
 });
