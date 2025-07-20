@@ -2,44 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Whittington Wings</title>
-  <link rel="stylesheet" href="style.css"/>
-  <script type="module" src="main.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module" src="main.js"></script>
 </head>
 <body>
   <div class="container">
-    <img src="WhittingtonWingsLogo.png" alt="Whittington Wings Logo" class="logo" />
+    <img src="logo.png" alt="Whittington Wings Logo" class="logo" />
 
-    <section class="card">
+    <section class="card" id="wingNight">
       <h2>Next Wing Night 🍗</h2>
-      <p><strong>Date:</strong> <span id="date">Loading...</span></p>
-      <p><strong>Location:</strong> <span id="location">Loading...</span></p>
+      <p><strong>Date:</strong> <span id="wingDate">Loading...</span></p>
+      <p><strong>Location:</strong> <span id="wingLocation">Loading...</span></p>
     </section>
 
-    <section class="card">
+    <section class="card" id="leaderboard">
       <h2>Leaderboard 🏆</h2>
-      <ul id="leaderboard-list"></ul>
+      <ul id="winnersList">Loading...</ul>
     </section>
 
-    <section class="card">
-      <h2>The Wing Commandments 🍗</h2>
-      <div class="collapsible">
-        <div id="commandments-preview">
-          <p>Once a month, the Wing Disciples gather. Each contender brings their own wings — marinated, seasoned, or sauced in secrecy.</p>
-          <p>The host provides the grill, the drinks, and the arena. One by one, each contender takes their turn at the grill, cooking their wings to crispy, saucy perfection.</p>
-          <button id="toggle-commandments">Read More</button>
-        </div>
-        <div id="commandments-full" style="display: none;">
-          <p>Wings are served in rounds — hot off the grill — and sampled by all.</p>
-          <p>When the final bite is eaten, the voting begins. Everyone gets one vote (and no, you can’t vote for yourself).</p>
-          <p>The contender with the most votes claims the win. No cash. No trophy. Just pride, trash talk rights, and a place on the leaderboard.</p>
-          <p>Victory isn’t given — it’s earned.</p>
-          <button id="toggle-less">Show Less</button>
-        </div>
+    <section class="card" id="charter">
+      <h2>🍗 The Wing Commandments 🍗</h2>
+      <div id="charterPreview">
+        <p>Once a month, the Wing Disciples gather...</p>
+        <button id="expandCharter">Read More</button>
+      </div>
+      <div id="charterFull" style="display:none">
+        <p>Once a month, the Wing Disciples gather. Each contender brings their own wings — marinated, seasoned, or sauced in secrecy.</p>
+        <p>The host provides the grill, the drinks, and the arena. One by one, each contender takes their turn at the grill, cooking their wings to crispy, saucy perfection.</p>
+        <p>Wings are served in rounds — hot off the grill — and sampled by all.</p>
+        <p>When the final bite is eaten, the voting begins. Everyone gets one vote (and no, you can’t vote for yourself).</p>
+        <p>The contender with the most votes claims the win. No cash. No trophy. Just pride, trash talk rights, and a place on the leaderboard.</p>
+        <p>Victory isn’t given — it’s earned.</p>
+        <button id="collapseCharter">Show Less</button>
       </div>
     </section>
-    
+
+    <section class="card" id="chat">
+      <h2>Wing Talk 🗣️</h2>
+      <div id="chatMessages" class="chat-box">Loading...</div>
+      <form id="chatForm">
+        <input type="text" id="chatName" placeholder="Your name" required />
+        <input type="text" id="chatMessage" placeholder="Your message" required />
+        <button type="submit">Send</button>
+      </form>
+    </section>
   </div>
 </body>
 </html>
