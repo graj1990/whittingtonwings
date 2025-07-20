@@ -57,3 +57,19 @@ ul#leaderboard-list li {
 .collapsible button:hover {
   background-color: #c0392b;
 }
+
+.wing-text p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.toggle-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #f08c00;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
