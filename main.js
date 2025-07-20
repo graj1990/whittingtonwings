@@ -106,14 +106,16 @@ document.addEventListener("DOMContentLoaded", function () {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
 
-  function renderMessage(doc) {
+  function renderMessage(doc, chatBox) {
     const data = doc.data();
     const div = document.createElement("div");
-    div.className = data.parentId ? "chat-reply chat-message" : "chat-message";
+    div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
     div.dataset.id = doc.id;
-
+  
+    const time = data.timestamp?.toDate().toLocaleString() || "just now";
+  
     div.innerHTML = `
-      <div><strong>${data.senderName || "Anon"}</strong> <span style="color:#777; font-size: 0.8em;">(${formatTimestamp(data.timestamp)})</span></div>
+      <div><strong>${data.senderName || "Anon"}</strong> <span style="font-size: 0.8em; color: #888">(${time})</span></div>
       <div>${data.text}</div>
       <div class="reactions">
         <button class="reaction-btn" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
@@ -122,19 +124,17 @@ document.addEventListener("DOMContentLoaded", function () {
         <button class="reply-btn">Reply</button>
       </div>
     `;
-
+  
+    // Append or nest
     if (data.parentId) {
       const parent = chatBox.querySelector(`[data-id="${data.parentId}"]`);
-      if (parent) {
-        parent.appendChild(div);
-      } else {
-        chatBox.appendChild(div);
-      }
+      if (parent) parent.appendChild(div);
+      else chatBox.appendChild(div); // fallback
     } else {
       chatBox.appendChild(div);
     }
-
-    // Reaction logic
+  
+    // Reaction click
     div.querySelectorAll(".reaction-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         if (!window.currentUser) return alert("Sign in to react.");
@@ -145,23 +145,39 @@ document.addEventListener("DOMContentLoaded", function () {
           });
       });
     });
-
-    // Reply logic
+  
+    // Reply click
     div.querySelector(".reply-btn").addEventListener("click", () => {
-      if (!window.currentUser) return alert("Sign in to reply.");
-      const reply = prompt("Your reply:");
-      if (reply) {
+      const reply = prompt("Reply to this message:");
+      if (reply && window.currentUser) {
         db.collection("siteData").doc("messages").collection("messages").add({
           text: reply,
           senderName: window.currentUser.displayName,
           senderId: window.currentUser.uid,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           parentId: doc.id,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
           reactions: {}
         });
       }
     });
   }
+  
+  function listenToMessages() {
+    const chatBox = document.getElementById("chatMessages");
+    chatBox.innerHTML = "";
+  
+    db.collection("siteData").doc("messages").collection("messages")
+      .orderBy("timestamp", "asc")
+      .onSnapshot(snapshot => {
+        chatBox.innerHTML = "";
+        snapshot.forEach(doc => {
+          renderMessage(doc, chatBox);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+  }
+  
+  listenToMessages();
 
   function loadMessages(initial = false) {
     let query = db.collection("siteData").doc("messages").collection("messages")
