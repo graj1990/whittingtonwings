@@ -142,7 +142,7 @@ document.getElementById("toggleCommandments").addEventListener("click", function
     })}`;
   }
 
-  function renderMessage(doc, messageMap, chatBox, prepend = false)
+  function renderMessage(doc, messageMap, chatBox, prepend = false) {
     const data = doc.data();
     const div = document.createElement("div");
     div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
