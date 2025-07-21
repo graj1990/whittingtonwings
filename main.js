@@ -126,7 +126,6 @@ document.getElementById("toggleCommandments").addEventListener("click", function
   }
 });
 
-document.addEventListener("DOMContentLoaded", function () {
   // Chat functionality
   const chatBox = document.getElementById("chatMessages");
   const sendBtn = document.getElementById("sendMessage");
