@@ -1,7 +1,5 @@
 // Imports and DOM Setup
 
-import { db, auth, provider } from './firebase.js';
-
 document.addEventListener("DOMContentLoaded", () => {
   const signInBtn = document.getElementById("signInBtn");
   const signOutBtn = document.getElementById("signOutBtn");
