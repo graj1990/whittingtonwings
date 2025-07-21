@@ -218,42 +218,35 @@ function renderMessage(doc, messageMap) {
   }
 
 function listenToMessages() {
+  const messageMap = {};
+  chatBox.innerHTML = "";
+
   db.collection("siteData")
     .doc("messages")
     .collection("messages")
-    .orderBy("timestamp", "desc")
+    .orderBy("timestamp", "asc") // Load in chronological order
     .onSnapshot(snapshot => {
-      chatBox.innerHTML = "";
-      const messageMap = {};
-      const parentMap = {};
-      const topLevelMessages = [];
+      const messages = [];
+      snapshot.forEach(doc => messages.push({ id: doc.id, data: doc.data(), doc }));
 
-      // Build maps
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        renderMessage(doc, messageMap);
+      // Separate top-level and replies
+      const topLevel = messages.filter(msg => !msg.data.parentId);
+      const replies = messages.filter(msg => msg.data.parentId);
 
-        if (data.parentId) {
-          parentMap[data.parentId] = parentMap[data.parentId] || [];
-          parentMap[data.parentId].push(doc.id);
-        } else {
-          topLevelMessages.push(doc.id);
-        }
-      });
+      // Sort top-level DESC (newest on top)
+      topLevel.sort((a, b) => b.data.timestamp?.toDate() - a.data.timestamp?.toDate());
 
-      // Append top-level messages in descending order
-      topLevelMessages.forEach(parentId => {
-        const parentDiv = messageMap[parentId];
-        if (parentDiv) chatBox.appendChild(parentDiv);
+      // Map and render top-level messages
+      topLevel.forEach(msg => {
+        renderMessage(msg.doc, messageMap, chatBox, false);
 
-        // Append replies under each parent
-        const replies = parentMap[parentId];
-        if (replies) {
-          replies.forEach(replyId => {
-            const replyDiv = messageMap[replyId];
-            if (replyDiv) parentDiv.appendChild(replyDiv);
-          });
-        }
+        // Find and render replies to this message (ASC)
+        const childReplies = replies.filter(r => r.data.parentId === msg.id);
+        childReplies.sort((a, b) => a.data.timestamp?.toDate() - b.data.timestamp?.toDate());
+
+        childReplies.forEach(reply => {
+          renderMessage(reply.doc, messageMap, chatBox, false);
+        });
       });
     });
 }
