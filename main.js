@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Chat Functions ---
-  function formatTimestamp(timestamp) {
+function formatTimestamp(timestamp) {
     const date = timestamp.toDate();
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
       hour: '2-digit',
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })}`;
   }
 
-  function renderMessage(doc, messageMap) {
+  function renderMessage(doc) {
     const data = doc.data();
     const div = document.createElement("div");
     div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
@@ -91,79 +91,112 @@ document.addEventListener("DOMContentLoaded", () => {
         <button class="reply-btn" data-id="${doc.id}">Reply</button>
       </div>
     `;
+    return div;
+  }
 
-    messageMap[doc.id] = div;
+  function displayMessages(messageMap) {
+    chatBox.innerHTML = "";
 
-    if (data.parentId && messageMap[data.parentId]) {
-      messageMap[data.parentId].appendChild(div);
-    } else {
-      chatBox.appendChild(div);
-    }
+    const topLevel = Object.entries(messageMap)
+      .filter(([_, val]) => !val.data.parentId)
+      .sort((a, b) => b[1].data.timestamp?.toMillis() - a[1].data.timestamp?.toMillis());
 
-    // --- Reactions ---
-    div.querySelectorAll(".reaction-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (!window.currentUser) return alert("Sign in to react.");
-        const messageId = btn.dataset.id;
-        const emoji = btn.dataset.emoji;
-        const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
-        const userReactionField = `reactionUsers.${window.currentUser.uid}`;
+    topLevel.forEach(([id, val]) => {
+      chatBox.appendChild(val.div);
 
-        messageRef.get().then(snapshot => {
-          const currentData = snapshot.data();
-          const alreadyReacted = currentData.reactionUsers?.[window.currentUser.uid];
-          if (alreadyReacted === emoji) return;
+      const replies = Object.entries(messageMap)
+        .filter(([_, reply]) => reply.data.parentId === id)
+        .sort((a, b) => a[1].data.timestamp?.toMillis() - b[1].data.timestamp?.toMillis());
 
-          const batch = db.batch();
-          const updates = {};
-          if (alreadyReacted && alreadyReacted !== emoji) {
-            updates[`reactions.${alreadyReacted}`] = firebase.firestore.FieldValue.increment(-1);
-          }
-          updates[`reactions.${emoji}`] = firebase.firestore.FieldValue.increment(1);
-          updates[userReactionField] = emoji;
-
-          batch.update(messageRef, updates);
-          return batch.commit();
-        });
+      replies.forEach(([_, replyVal]) => {
+        val.div.appendChild(replyVal.div);
       });
     });
+  }
 
-    // --- Replies ---
-    div.querySelector(".reply-btn").addEventListener("click", () => {
-      const reply = prompt("Reply to this message:");
-      if (reply && window.currentUser) {
-        db.collection("siteData").doc("messages").collection("messages").add({
-          text: reply,
-          senderName: window.currentUser.displayName,
-          senderId: window.currentUser.uid,
-          parentId: doc.id,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-          reactions: {},
-          reactionUsers: {}
-        });
+  function addHandlers(messageMap) {
+    Object.values(messageMap).forEach(({ div, data }) => {
+      div.querySelectorAll(".reaction-btn").forEach(btn => {
+        btn.onclick = () => {
+          if (!window.currentUser) return alert("Sign in to react.");
+          const messageId = btn.dataset.id;
+          const emoji = btn.dataset.emoji;
+          const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
+          const userReactionField = `reactionUsers.${window.currentUser.uid}`;
+
+          messageRef.get().then(snapshot => {
+            const currentData = snapshot.data();
+            const alreadyReacted = currentData.reactionUsers?.[window.currentUser.uid];
+            if (alreadyReacted === emoji) return;
+
+            const batch = db.batch();
+            const updates = {};
+
+            if (alreadyReacted && alreadyReacted !== emoji) {
+              updates[`reactions.${alreadyReacted}`] = firebase.firestore.FieldValue.increment(-1);
+            }
+
+            updates[`reactions.${emoji}`] = firebase.firestore.FieldValue.increment(1);
+            updates[userReactionField] = emoji;
+
+            batch.update(messageRef, updates);
+            return batch.commit();
+          });
+        };
+      });
+
+      const replyBtn = div.querySelector(".reply-btn");
+      if (replyBtn) {
+        replyBtn.onclick = () => {
+          const reply = prompt("Reply to this message:");
+          if (reply && window.currentUser) {
+            db.collection("siteData").doc("messages").collection("messages").add({
+              text: reply,
+              senderName: window.currentUser.displayName,
+              senderId: window.currentUser.uid,
+              parentId: data.parentId || replyBtn.dataset.id,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              reactions: {},
+              reactionUsers: {}
+            });
+          }
+        };
       }
     });
   }
 
   function listenToMessages() {
     const messageMap = {};
-    chatBox.innerHTML = "";
 
     db.collection("siteData")
       .doc("messages")
       .collection("messages")
       .orderBy("timestamp", "desc")
       .onSnapshot(snapshot => {
-        chatBox.innerHTML = "";
-        snapshot.docs.forEach(doc => {
-          renderMessage(doc, messageMap);
+        let shouldRedraw = false;
+
+        snapshot.docChanges().forEach(change => {
+          const doc = change.doc;
+          const data = doc.data();
+
+          if (change.type === "added" || change.type === "modified") {
+            messageMap[doc.id] = {
+              div: renderMessage(doc),
+              data
+            };
+            shouldRedraw = true;
+          }
         });
+
+        if (shouldRedraw) {
+          displayMessages(messageMap);
+          addHandlers(messageMap);
+        }
       });
   }
 
   listenToMessages();
 
-  // --- Send Message ---
   sendBtn.addEventListener("click", () => {
     const text = messageInput.value.trim();
     if (!text) return;
