@@ -242,10 +242,16 @@ function listenToMessages() {
       Object.keys(parentMap).forEach(parentId => {
         const parentDiv = messageMap[parentId];
         if (parentDiv) {
-          parentMap[parentId].forEach(replyId => {
-            const replyDiv = messageMap[replyId];
-            if (replyDiv) parentDiv.appendChild(replyDiv);
-          });
+          parentMap[parentId]
+            .sort((a, b) => {
+              const tsA = messageMap[a]?.data.timestamp?.toMillis() || 0;
+              const tsB = messageMap[b]?.data.timestamp?.toMillis() || 0;
+              return tsA - tsB; // oldest first
+            })
+            .forEach(replyId => {
+              const replyDiv = messageMap[replyId];
+              if (replyDiv) parentDiv.appendChild(replyDiv);
+            });
         }
       });
     });
