@@ -147,7 +147,14 @@ ul#leaderboard-list li {
 }
 
 #sendMessage {
-  height: 44px; /* Match input height */
+  height: 44px; /* Same as input */
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
   white-space: nowrap;
   flex-shrink: 0;
 }
