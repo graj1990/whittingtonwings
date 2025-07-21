@@ -123,87 +123,93 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function renderMessage(doc, messageMap, chatBox) {
   const data = doc.data();
+  const messageId = doc.id;
+
+  // Ensure reactions object exists
+  const reactions = data.reactions || {};
+  const timestamp = data.timestamp ? formatTimestamp(data.timestamp) : "Just now";
+
   const div = document.createElement("div");
-  div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
-  div.dataset.id = doc.id;
+  div.className = "chat-message";
+  div.dataset.id = messageId;
 
-  const time = data.timestamp?.toDate().toLocaleString() || "just now";
-
+  // Base message HTML
   div.innerHTML = `
-    <div><strong>${data.senderName || "Anon"}</strong> <span style="font-size: 0.8em; color: #888">(${time})</span></div>
-    <div>${data.text}</div>
+    <strong>${data.senderName || "Anon"}</strong> 
+    <span style="font-size: 0.8em; color: #777;">@ ${timestamp}</span><br>
+    ${data.text}
     <div class="reactions">
-      <button class="reaction-btn" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
-      <button class="reaction-btn" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
-      <button class="reaction-btn" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
-      <button class="reply-btn">Reply</button>
+      <button class="reaction-btn" data-emoji="🔥">🔥 ${reactions["🔥"] || 0}</button>
+      <button class="reaction-btn" data-emoji="👍">👍 ${reactions["👍"] || 0}</button>
+      <button class="reaction-btn" data-emoji="😂">😂 ${reactions["😂"] || 0}</button>
+      <button class="reply-btn">💬 Reply</button>
     </div>
   `;
 
-  // Reaction logic
+  // If it's a reply, indent it
+  if (data.parentId && messageMap[data.parentId]) {
+    const parent = messageMap[data.parentId];
+    const replyWrapper = document.createElement("div");
+    replyWrapper.className = "chat-reply";
+    replyWrapper.appendChild(div);
+    parent.appendChild(replyWrapper);
+  } else {
+    chatBox.appendChild(div);
+    messageMap[messageId] = div;
+  }
+
+  // Reaction buttons
   div.querySelectorAll(".reaction-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       if (!window.currentUser) return alert("Sign in to react.");
+
       const emoji = btn.dataset.emoji;
-      db.collection("siteData").doc("messages").collection("messages")
-        .doc(doc.id).update({
-          [`reactions.${emoji}`]: firebase.firestore.FieldValue.increment(1)
+      const userId = window.currentUser.uid;
+
+      // Fetch the message to check existing reactions
+      const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
+      messageRef.get().then((snapshot) => {
+        const currentReactions = snapshot.data().reactions || {};
+
+        if (currentReactions[userId]) {
+          alert("You've already reacted to this message.");
+          return;
+        }
+
+        // Record user reaction
+        messageRef.update({
+          [`reactions.${userId}`]: emoji
         });
+      });
     });
   });
 
-  // Reply logic
+  // Reply handler
   div.querySelector(".reply-btn").addEventListener("click", () => {
-    const reply = prompt("Reply to this message:");
+    const reply = prompt("Enter your reply:");
     if (reply && window.currentUser) {
       db.collection("siteData").doc("messages").collection("messages").add({
         text: reply,
         senderName: window.currentUser.displayName,
         senderId: window.currentUser.uid,
-        parentId: doc.id,
+        parentId: messageId,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         reactions: {}
       });
     }
   });
-
-  // Store and return
-  messageMap[doc.id] = { element: div, data };
-
-  return div;
 }
 
-  function listenToMessages() {
-    const chatBox = document.getElementById("chatMessages");
-    const messageMap = {};
-  
-    db.collection("siteData").doc("messages").collection("messages")
-      .orderBy("timestamp", "asc")
-      .onSnapshot(snapshot => {
-        chatBox.innerHTML = "";
-        const docs = snapshot.docs;
-        const topLevel = [];
-  
-        // Render and map all messages
-        docs.forEach(doc => {
-          const data = doc.data();
-          const el = renderMessage(doc, messageMap, chatBox);
-  
-          if (data.parentId) {
-            // Try to attach to parent
-            const parent = messageMap[data.parentId]?.element;
-            if (parent) parent.appendChild(el);
-            else topLevel.push(el); // fallback
-          } else {
-            topLevel.push(el);
-          }
-        });
-  
-        // Append top-level messages
-        topLevel.forEach(el => chatBox.appendChild(el));
-        chatBox.scrollTop = chatBox.scrollHeight;
-      });
-  }
+function listenToMessages() {
+  const messageMap = {};
+  db.collection("siteData").doc("messages").collection("messages")
+    .orderBy("timestamp", "asc")
+    .onSnapshot((snapshot) => {
+      chatBox.innerHTML = "";
+      snapshot.forEach(doc => renderMessage(doc, messageMap, chatBox));
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+}
   
   listenToMessages();
   
