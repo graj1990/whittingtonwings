@@ -226,23 +226,30 @@ function listenToMessages() {
       chatBox.innerHTML = "";
       const messageMap = {};
       const parentMap = {};
+      const topLevelMessages = [];
 
-      snapshot.docs.reverse().forEach(doc => {
+      // Build maps
+      snapshot.docs.forEach(doc => {
         const data = doc.data();
         renderMessage(doc, messageMap);
 
-        // Organize replies under parents
         if (data.parentId) {
           parentMap[data.parentId] = parentMap[data.parentId] || [];
           parentMap[data.parentId].push(doc.id);
+        } else {
+          topLevelMessages.push(doc.id);
         }
       });
 
-      // Nest replies under their parents
-      Object.keys(parentMap).forEach(parentId => {
+      // Append top-level messages in descending order
+      topLevelMessages.forEach(parentId => {
         const parentDiv = messageMap[parentId];
-        if (parentDiv) {
-          parentMap[parentId].forEach(replyId => {
+        if (parentDiv) chatBox.appendChild(parentDiv);
+
+        // Append replies under each parent
+        const replies = parentMap[parentId];
+        if (replies) {
+          replies.forEach(replyId => {
             const replyDiv = messageMap[replyId];
             if (replyDiv) parentDiv.appendChild(replyDiv);
           });
