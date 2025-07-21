@@ -130,7 +130,6 @@ document.getElementById("toggleCommandments").addEventListener("click", function
   const chatBox = document.getElementById("chatMessages");
   const sendBtn = document.getElementById("sendMessage");
   const messageInput = document.getElementById("messageInput");
-  const loadMoreBtn = document.getElementById("loadMoreMessagesBtn");
   let lastVisible = null;
   let loadedMessages = [];
 
@@ -224,55 +223,23 @@ document.getElementById("toggleCommandments").addEventListener("click", function
   }
 
   function listenToMessages() {
+    const messageMap = {};
+    chatBox.innerHTML = ""; // Clear previous messages
+  
     db.collection("siteData")
       .doc("messages")
       .collection("messages")
       .orderBy("timestamp", "asc")
       .onSnapshot(snapshot => {
-        chatBox.innerHTML = "";
-        const messageMap = {};
-        snapshot.docs.forEach(doc => {
-          renderMessage(doc, messageMap, chatBox);
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "added" && !messageMap[change.doc.id]) {
+            renderMessage(change.doc, messageMap, chatBox);
+          }
         });
       });
   }
 
   listenToMessages();
-
-function loadMessages(initial = false) {
-  let query = db.collection("siteData").doc("messages").collection("messages")
-    .orderBy("timestamp", "desc")
-    .limit(5);
-
-  if (lastVisible && !initial) {
-    query = query.startAfter(lastVisible);
-  }
-
-  query.get().then((snapshot) => {
-    if (snapshot.empty) {
-      loadMoreBtn.style.display = "none";
-      return;
-    }
-
-    const docs = snapshot.docs;
-
-    // Update lastVisible for pagination
-    lastVisible = docs[docs.length - 1];
-
-    const messageMap = {};
-
-    // Reverse so they display oldest to newest (top to bottom)
-    docs.reverse().forEach(doc => {
-      if (!loadedMessages.includes(doc.id)) {
-        loadedMessages.push(doc.id);
-        renderMessage(doc, messageMap, chatBox, true); // prepend
-      }
-    });
-  });
-}
-
-  loadMoreBtn.addEventListener("click", () => loadMessages());
-  loadMessages(true);
 
   sendBtn.addEventListener("click", () => {
     const text = messageInput.value.trim();
