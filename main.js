@@ -229,7 +229,7 @@ document.getElementById("toggleCommandments").addEventListener("click", function
     db.collection("siteData")
       .doc("messages")
       .collection("messages")
-      .orderBy("timestamp", "dsc")
+      .orderBy("timestamp", "desc")
       .onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
           if (change.type === "added" && !messageMap[change.doc.id]) {
