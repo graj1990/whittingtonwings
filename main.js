@@ -108,18 +108,39 @@ document.addEventListener("DOMContentLoaded", function () {
       readMoreBtn.textContent = isMore ? "Show Less" : "Read More";
     });
   }
-  // Chat functionality
-  const chatBox = document.getElementById("chatMessages");
-  const sendBtn = document.getElementById("sendMessage");
-  const messageInput = document.getElementById("messageInput");
-  const loadMoreBtn = document.getElementById("loadMoreMessagesBtn");
-  let lastVisible = null;
-  let loadedMessages = [];
 
-  function formatTimestamp(timestamp) {
-    const date = timestamp.toDate();
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+// Wing Commandments Section Toggle
+document.getElementById("toggleCommandments").addEventListener("click", function () {
+  const collapsed = document.getElementById("collapsedWingText");
+  const full = document.getElementById("fullWingText");
+  const button = this;
+
+  if (full.style.display === "none") {
+    collapsed.style.display = "none";
+    full.style.display = "block";
+    button.textContent = "Show Less";
+  } else {
+    collapsed.style.display = "block";
+    full.style.display = "none";
+    button.textContent = "Read More";
   }
+});
+
+// Chat functionality
+const chatBox = document.getElementById("chatMessages");
+const sendBtn = document.getElementById("sendMessage");
+const messageInput = document.getElementById("messageInput");
+const loadMoreBtn = document.getElementById("loadMoreMessagesBtn");
+let lastVisible = null;
+let loadedMessages = [];
+
+function formatTimestamp(timestamp) {
+  const date = timestamp.toDate();
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  })}`;
+}
 
 function renderMessage(doc, messageMap, chatBox) {
   const data = doc.data();
@@ -142,7 +163,7 @@ function renderMessage(doc, messageMap, chatBox) {
     </div>
   `;
 
-  messageMap[doc.id] = div; // ✅ Store message element by ID
+  messageMap[doc.id] = div;
 
   if (data.parentId && messageMap[data.parentId]) {
     messageMap[data.parentId].appendChild(div);
@@ -157,24 +178,21 @@ function renderMessage(doc, messageMap, chatBox) {
       const messageId = btn.dataset.id;
       const emoji = btn.dataset.emoji;
       const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
-
       const userReactionField = `reactionUsers.${window.currentUser.uid}`;
 
       messageRef.get().then(snapshot => {
         const currentData = snapshot.data();
         const alreadyReacted = currentData.reactionUsers?.[window.currentUser.uid];
 
-        if (alreadyReacted === emoji) return; // already reacted with this emoji
+        if (alreadyReacted === emoji) return;
 
         const batch = db.batch();
         const updates = {};
 
-        // Remove old reaction if different
         if (alreadyReacted && alreadyReacted !== emoji) {
           updates[`reactions.${alreadyReacted}`] = firebase.firestore.FieldValue.increment(-1);
         }
 
-        // Apply new reaction
         updates[`reactions.${emoji}`] = firebase.firestore.FieldValue.increment(1);
         updates[userReactionField] = emoji;
 
@@ -209,89 +227,60 @@ function listenToMessages() {
     .onSnapshot(snapshot => {
       chatBox.innerHTML = "";
       const messageMap = {};
-
-      // First pass: create top-level messages
       snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        if (!data.parentId) {
-          renderMessage(doc, messageMap, chatBox);
-        }
-      });
-
-      // Second pass: append replies
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        if (data.parentId) {
-          renderMessage(doc, messageMap, chatBox);
-        }
+        renderMessage(doc, messageMap, chatBox);
       });
     });
 }
-  
-  listenToMessages();
-  
-    function loadMessages(initial = false) {
-      let query = db.collection("siteData").doc("messages").collection("messages")
-        .orderBy("timestamp", "desc")
-        .limit(5);
-  
-      if (lastVisible && !initial) {
-        query = query.startAfter(lastVisible);
-      }
-  
-      query.get().then((snapshot) => {
-        if (snapshot.empty) {
-          loadMoreBtn.style.display = "none";
-          return;
-        }
-  
-        lastVisible = snapshot.docs[snapshot.docs.length - 1];
-  
-        snapshot.docs.reverse().forEach(doc => {
-          if (!loadedMessages.includes(doc.id)) {
-            loadedMessages.push(doc.id);
-            renderMessage(doc);
-          }
-        });
-      });
-    }
-  
-    loadMoreBtn.addEventListener("click", () => loadMessages());
-    loadMessages(true);
 
-  sendBtn.addEventListener("click", () => {
-    const text = messageInput.value.trim();
-    if (!text) return;
-    if (!window.currentUser) {
-      alert("You must be signed in to send messages.");
+listenToMessages();
+
+function loadMessages(initial = false) {
+  let query = db.collection("siteData").doc("messages").collection("messages")
+    .orderBy("timestamp", "desc")
+    .limit(5);
+
+  if (lastVisible && !initial) {
+    query = query.startAfter(lastVisible);
+  }
+
+  query.get().then((snapshot) => {
+    if (snapshot.empty) {
+      loadMoreBtn.style.display = "none";
       return;
     }
 
-    db.collection("siteData").doc("messages").collection("messages").add({
-      text,
-      senderName: window.currentUser.displayName,
-      senderId: window.currentUser.uid,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      reactions: {}
-    }).then(() => {
-      messageInput.value = "";
+    lastVisible = snapshot.docs[snapshot.docs.length - 1];
+    const messageMap = {};
+
+    snapshot.docs.reverse().forEach(doc => {
+      if (!loadedMessages.includes(doc.id)) {
+        loadedMessages.push(doc.id);
+        renderMessage(doc, messageMap, chatBox);
+      }
     });
   });
-});
+}
 
-// Wing Commandments Section Toggle
-document.getElementById("toggleCommandments").addEventListener("click", function () {
-  const collapsed = document.getElementById("collapsedWingText");
-  const full = document.getElementById("fullWingText");
-  const button = this;
+loadMoreBtn.addEventListener("click", () => loadMessages());
+loadMessages(true);
 
-  if (full.style.display === "none") {
-    collapsed.style.display = "none";
-    full.style.display = "block";
-    button.textContent = "Show Less";
-  } else {
-    collapsed.style.display = "block";
-    full.style.display = "none";
-    button.textContent = "Read More";
+sendBtn.addEventListener("click", () => {
+  const text = messageInput.value.trim();
+  if (!text) return;
+  if (!window.currentUser) {
+    alert("You must be signed in to send messages.");
+    return;
   }
+
+  db.collection("siteData").doc("messages").collection("messages").add({
+    text,
+    senderName: window.currentUser.displayName,
+    senderId: window.currentUser.uid,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    reactions: {},
+    reactionUsers: {}
+  }).then(() => {
+    messageInput.value = "";
+  });
 });
