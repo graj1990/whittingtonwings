@@ -61,6 +61,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+// --- Wing Commandments Toggle ---
+const toggleBtn = document.getElementById("toggleCommandments");
+const collapsed = document.getElementById("collapsedWingText");
+const full = document.getElementById("fullWingText");
+
+if (toggleBtn && collapsed && full) {
+  toggleBtn.addEventListener("click", () => {
+    const isCollapsed = full.style.display === "none";
+    full.style.display = isCollapsed ? "block" : "none";
+    collapsed.style.display = isCollapsed ? "none" : "block";
+    toggleBtn.textContent = isCollapsed ? "Show Less" : "Read More";
+  });
+}
+  
   // --- Chat Functions ---
 function formatTimestamp(timestamp) {
     const date = timestamp.toDate();
