@@ -70,29 +70,81 @@ function formatTimestamp(timestamp) {
     })}`;
   }
 
-  function renderMessage(doc) {
-    const data = doc.data();
-    const div = document.createElement("div");
-    div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
-    div.dataset.id = doc.id;
+function renderMessage(doc, messageMap) {
+  const data = doc.data();
+  const div = document.createElement("div");
+  div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
+  div.dataset.id = doc.id;
 
-    const formattedTime = data.timestamp?.toDate()
-      ? formatTimestamp(data.timestamp)
-      : "Just now";
+  const timestamp = data.timestamp?.toDate();
+  const formattedTime = timestamp ? timestamp.toLocaleString() : "Just now";
 
-    div.innerHTML = `
-      <strong>${data.senderName || "Anon"}</strong>
-      <span style="font-size: 0.85em; color: #888;"> (${formattedTime})</span><br/>
-      ${data.text}
-      <div class="reactions">
-        <button class="reaction-btn" data-id="${doc.id}" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
-        <button class="reaction-btn" data-id="${doc.id}" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
-        <button class="reaction-btn" data-id="${doc.id}" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
-        <button class="reply-btn" data-id="${doc.id}">Reply</button>
-      </div>
-    `;
-    return div;
+  div.innerHTML = `
+    <strong>${data.senderName || "Anon"}</strong>
+    <span style="font-size: 0.85em; color: #888;"> (${formattedTime})</span><br/>
+    ${data.text}
+    <div class="reactions">
+      <button class="reaction-btn" data-id="${doc.id}" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
+      <button class="reaction-btn" data-id="${doc.id}" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
+      <button class="reaction-btn" data-id="${doc.id}" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
+      <button class="reply-btn" data-id="${doc.id}">Reply</button>
+    </div>
+  `;
+
+  messageMap[doc.id] = div;
+
+  // Only insert top-level messages here; replies will be attached later
+  if (!data.parentId) {
+    chatBox.appendChild(div);
   }
+
+  // Handle reactions
+  div.querySelectorAll(".reaction-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (!window.currentUser) return alert("Sign in to react.");
+      const messageId = btn.dataset.id;
+      const emoji = btn.dataset.emoji;
+      const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
+      const userReactionField = `reactionUsers.${window.currentUser.uid}`;
+
+      messageRef.get().then(snapshot => {
+        const currentData = snapshot.data();
+        const alreadyReacted = currentData.reactionUsers?.[window.currentUser.uid];
+
+        if (alreadyReacted === emoji) return;
+
+        const batch = db.batch();
+        const updates = {};
+
+        if (alreadyReacted && alreadyReacted !== emoji) {
+          updates[`reactions.${alreadyReacted}`] = firebase.firestore.FieldValue.increment(-1);
+        }
+
+        updates[`reactions.${emoji}`] = firebase.firestore.FieldValue.increment(1);
+        updates[userReactionField] = emoji;
+
+        batch.update(messageRef, updates);
+        return batch.commit();
+      });
+    });
+  });
+
+  // Handle replies
+  div.querySelector(".reply-btn").addEventListener("click", () => {
+    const reply = prompt("Reply to this message:");
+    if (reply && window.currentUser) {
+      db.collection("siteData").doc("messages").collection("messages").add({
+        text: reply,
+        senderName: window.currentUser.displayName,
+        senderId: window.currentUser.uid,
+        parentId: doc.id,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        reactions: {},
+        reactionUsers: {}
+      });
+    }
+  });
+}
 
   function displayMessages(messageMap) {
     chatBox.innerHTML = "";
@@ -165,35 +217,39 @@ function formatTimestamp(timestamp) {
     });
   }
 
-  function listenToMessages() {
-    const messageMap = {};
+function listenToMessages() {
+  db.collection("siteData")
+    .doc("messages")
+    .collection("messages")
+    .orderBy("timestamp", "desc")
+    .onSnapshot(snapshot => {
+      chatBox.innerHTML = "";
+      const messageMap = {};
+      const parentMap = {};
 
-    db.collection("siteData")
-      .doc("messages")
-      .collection("messages")
-      .orderBy("timestamp", "desc")
-      .onSnapshot(snapshot => {
-        let shouldRedraw = false;
+      snapshot.docs.reverse().forEach(doc => {
+        const data = doc.data();
+        renderMessage(doc, messageMap);
 
-        snapshot.docChanges().forEach(change => {
-          const doc = change.doc;
-          const data = doc.data();
-
-          if (change.type === "added" || change.type === "modified") {
-            messageMap[doc.id] = {
-              div: renderMessage(doc),
-              data
-            };
-            shouldRedraw = true;
-          }
-        });
-
-        if (shouldRedraw) {
-          displayMessages(messageMap);
-          addHandlers(messageMap);
+        // Organize replies under parents
+        if (data.parentId) {
+          parentMap[data.parentId] = parentMap[data.parentId] || [];
+          parentMap[data.parentId].push(doc.id);
         }
       });
-  }
+
+      // Nest replies under their parents
+      Object.keys(parentMap).forEach(parentId => {
+        const parentDiv = messageMap[parentId];
+        if (parentDiv) {
+          parentMap[parentId].forEach(replyId => {
+            const replyDiv = messageMap[replyId];
+            if (replyDiv) parentDiv.appendChild(replyDiv);
+          });
+        }
+      });
+    });
+}
 
   listenToMessages();
 
