@@ -126,161 +126,163 @@ document.getElementById("toggleCommandments").addEventListener("click", function
   }
 });
 
-// Chat functionality
-const chatBox = document.getElementById("chatMessages");
-const sendBtn = document.getElementById("sendMessage");
-const messageInput = document.getElementById("messageInput");
-const loadMoreBtn = document.getElementById("loadMoreMessagesBtn");
-let lastVisible = null;
-let loadedMessages = [];
+document.addEventListener("DOMContentLoaded", function () {
+  // Chat functionality
+  const chatBox = document.getElementById("chatMessages");
+  const sendBtn = document.getElementById("sendMessage");
+  const messageInput = document.getElementById("messageInput");
+  const loadMoreBtn = document.getElementById("loadMoreMessagesBtn");
+  let lastVisible = null;
+  let loadedMessages = [];
 
-function formatTimestamp(timestamp) {
-  const date = timestamp.toDate();
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  })}`;
-}
-
-function renderMessage(doc, messageMap, chatBox) {
-  const data = doc.data();
-  const div = document.createElement("div");
-  div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
-  div.dataset.id = doc.id;
-
-  const timestamp = data.timestamp?.toDate();
-  const formattedTime = timestamp ? timestamp.toLocaleString() : "Just now";
-
-  div.innerHTML = `
-    <strong>${data.senderName || "Anon"}</strong>
-    <span style="font-size: 0.85em; color: #888;"> (${formattedTime})</span><br/>
-    ${data.text}
-    <div class="reactions">
-      <button class="reaction-btn" data-id="${doc.id}" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
-      <button class="reaction-btn" data-id="${doc.id}" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
-      <button class="reaction-btn" data-id="${doc.id}" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
-      <button class="reply-btn" data-id="${doc.id}">Reply</button>
-    </div>
-  `;
-
-  messageMap[doc.id] = div;
-
-  if (data.parentId && messageMap[data.parentId]) {
-    messageMap[data.parentId].appendChild(div);
-  } else if (!data.parentId) {
-    chatBox.insertBefore(div, chatBox.firstChild);
+  function formatTimestamp(timestamp) {
+    const date = timestamp.toDate();
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    })}`;
   }
 
-  // Handle reactions
-  div.querySelectorAll(".reaction-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (!window.currentUser) return alert("Sign in to react.");
-      const messageId = btn.dataset.id;
-      const emoji = btn.dataset.emoji;
-      const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
-      const userReactionField = `reactionUsers.${window.currentUser.uid}`;
+  function renderMessage(doc, messageMap, chatBox) {
+    const data = doc.data();
+    const div = document.createElement("div");
+    div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
+    div.dataset.id = doc.id;
 
-      messageRef.get().then(snapshot => {
-        const currentData = snapshot.data();
-        const alreadyReacted = currentData.reactionUsers?.[window.currentUser.uid];
+    const timestamp = data.timestamp?.toDate();
+    const formattedTime = timestamp ? timestamp.toLocaleString() : "Just now";
 
-        if (alreadyReacted === emoji) return;
+    div.innerHTML = `
+      <strong>${data.senderName || "Anon"}</strong>
+      <span style="font-size: 0.85em; color: #888;"> (${formattedTime})</span><br/>
+      ${data.text}
+      <div class="reactions">
+        <button class="reaction-btn" data-id="${doc.id}" data-emoji="👍">👍 ${data.reactions?.["👍"] || 0}</button>
+        <button class="reaction-btn" data-id="${doc.id}" data-emoji="🔥">🔥 ${data.reactions?.["🔥"] || 0}</button>
+        <button class="reaction-btn" data-id="${doc.id}" data-emoji="😂">😂 ${data.reactions?.["😂"] || 0}</button>
+        <button class="reply-btn" data-id="${doc.id}">Reply</button>
+      </div>
+    `;
 
-        const batch = db.batch();
-        const updates = {};
+    messageMap[doc.id] = div;
 
-        if (alreadyReacted && alreadyReacted !== emoji) {
-          updates[`reactions.${alreadyReacted}`] = firebase.firestore.FieldValue.increment(-1);
-        }
-
-        updates[`reactions.${emoji}`] = firebase.firestore.FieldValue.increment(1);
-        updates[userReactionField] = emoji;
-
-        batch.update(messageRef, updates);
-        return batch.commit();
-      });
-    });
-  });
-
-  // Handle replies
-  div.querySelector(".reply-btn").addEventListener("click", () => {
-    const reply = prompt("Reply to this message:");
-    if (reply && window.currentUser) {
-      db.collection("siteData").doc("messages").collection("messages").add({
-        text: reply,
-        senderName: window.currentUser.displayName,
-        senderId: window.currentUser.uid,
-        parentId: doc.id,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        reactions: {},
-        reactionUsers: {}
-      });
+    if (data.parentId && messageMap[data.parentId]) {
+      messageMap[data.parentId].appendChild(div);
+    } else if (!data.parentId) {
+      chatBox.insertBefore(div, chatBox.firstChild);
     }
-  });
-}
 
-function listenToMessages() {
-  db.collection("siteData")
-    .doc("messages")
-    .collection("messages")
-    .orderBy("timestamp", "asc")
-    .onSnapshot(snapshot => {
-      chatBox.innerHTML = "";
-      const messageMap = {};
-      snapshot.docs.forEach(doc => {
-        renderMessage(doc, messageMap, chatBox);
+    // Handle reactions
+    div.querySelectorAll(".reaction-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (!window.currentUser) return alert("Sign in to react.");
+        const messageId = btn.dataset.id;
+        const emoji = btn.dataset.emoji;
+        const messageRef = db.collection("siteData").doc("messages").collection("messages").doc(messageId);
+        const userReactionField = `reactionUsers.${window.currentUser.uid}`;
+
+        messageRef.get().then(snapshot => {
+          const currentData = snapshot.data();
+          const alreadyReacted = currentData.reactionUsers?.[window.currentUser.uid];
+
+          if (alreadyReacted === emoji) return;
+
+          const batch = db.batch();
+          const updates = {};
+
+          if (alreadyReacted && alreadyReacted !== emoji) {
+            updates[`reactions.${alreadyReacted}`] = firebase.firestore.FieldValue.increment(-1);
+          }
+
+          updates[`reactions.${emoji}`] = firebase.firestore.FieldValue.increment(1);
+          updates[userReactionField] = emoji;
+
+          batch.update(messageRef, updates);
+          return batch.commit();
+        });
       });
     });
-}
 
-listenToMessages();
-
-function loadMessages(initial = false) {
-  let query = db.collection("siteData").doc("messages").collection("messages")
-    .orderBy("timestamp", "desc")
-    .limit(5);
-
-  if (lastVisible && !initial) {
-    query = query.startAfter(lastVisible);
+    // Handle replies
+    div.querySelector(".reply-btn").addEventListener("click", () => {
+      const reply = prompt("Reply to this message:");
+      if (reply && window.currentUser) {
+        db.collection("siteData").doc("messages").collection("messages").add({
+          text: reply,
+          senderName: window.currentUser.displayName,
+          senderId: window.currentUser.uid,
+          parentId: doc.id,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          reactions: {},
+          reactionUsers: {}
+        });
+      }
+    });
   }
 
-  query.get().then((snapshot) => {
-    if (snapshot.empty) {
-      loadMoreBtn.style.display = "none";
+  function listenToMessages() {
+    db.collection("siteData")
+      .doc("messages")
+      .collection("messages")
+      .orderBy("timestamp", "asc")
+      .onSnapshot(snapshot => {
+        chatBox.innerHTML = "";
+        const messageMap = {};
+        snapshot.docs.forEach(doc => {
+          renderMessage(doc, messageMap, chatBox);
+        });
+      });
+  }
+
+  listenToMessages();
+
+  function loadMessages(initial = false) {
+    let query = db.collection("siteData").doc("messages").collection("messages")
+      .orderBy("timestamp", "desc")
+      .limit(5);
+
+    if (lastVisible && !initial) {
+      query = query.startAfter(lastVisible);
+    }
+
+    query.get().then((snapshot) => {
+      if (snapshot.empty) {
+        loadMoreBtn.style.display = "none";
+        return;
+      }
+
+      lastVisible = snapshot.docs[snapshot.docs.length - 1];
+      const messageMap = {};
+
+      snapshot.docs.reverse().forEach(doc => {
+        if (!loadedMessages.includes(doc.id)) {
+          loadedMessages.push(doc.id);
+          renderMessage(doc, messageMap, chatBox);
+        }
+      });
+    });
+  }
+
+  loadMoreBtn.addEventListener("click", () => loadMessages());
+  loadMessages(true);
+
+  sendBtn.addEventListener("click", () => {
+    const text = messageInput.value.trim();
+    if (!text) return;
+    if (!window.currentUser) {
+      alert("You must be signed in to send messages.");
       return;
     }
 
-    lastVisible = snapshot.docs[snapshot.docs.length - 1];
-    const messageMap = {};
-
-    snapshot.docs.reverse().forEach(doc => {
-      if (!loadedMessages.includes(doc.id)) {
-        loadedMessages.push(doc.id);
-        renderMessage(doc, messageMap, chatBox);
-      }
+    db.collection("siteData").doc("messages").collection("messages").add({
+      text,
+      senderName: window.currentUser.displayName,
+      senderId: window.currentUser.uid,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      reactions: {},
+      reactionUsers: {}
+    }).then(() => {
+      messageInput.value = "";
     });
   });
-}
-
-loadMoreBtn.addEventListener("click", () => loadMessages());
-loadMessages(true);
-
-sendBtn.addEventListener("click", () => {
-  const text = messageInput.value.trim();
-  if (!text) return;
-  if (!window.currentUser) {
-    alert("You must be signed in to send messages.");
-    return;
-  }
-
-  db.collection("siteData").doc("messages").collection("messages").add({
-    text,
-    senderName: window.currentUser.displayName,
-    senderId: window.currentUser.uid,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    reactions: {},
-    reactionUsers: {}
-  }).then(() => {
-    messageInput.value = "";
-  });
-}); //
+}); // closes DOMContentLoaded
