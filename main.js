@@ -188,5 +188,4 @@ document.addEventListener("DOMContentLoaded", () => {
       messageInput.value = "";
     });
   });
-});
 }); // 👈 This closes the DOMContentLoaded event listener
