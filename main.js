@@ -206,7 +206,22 @@ function listenToMessages() {
     .orderBy("timestamp", "asc")
     .onSnapshot((snapshot) => {
       chatBox.innerHTML = "";
-      snapshot.forEach(doc => renderMessage(doc, messageMap, chatBox));
+      const docs = snapshot.docs;
+      // 1. First pass: create all top-level messages and map them
+      docs.forEach(doc => {
+        const data = doc.data();
+        if (!data.parentId) {
+          renderMessage(doc, messageMap, chatBox);
+        }
+      });
+      
+      // 2. Second pass: render replies
+      docs.forEach(doc => {
+        const data = doc.data();
+        if (data.parentId) {
+          renderMessage(doc, messageMap, chatBox);
+        }
+      });
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
