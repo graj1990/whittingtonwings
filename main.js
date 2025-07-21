@@ -218,35 +218,35 @@ function renderMessage(doc, messageMap) {
   }
 
 function listenToMessages() {
-  const messageMap = {};
-  chatBox.innerHTML = "";
-
   db.collection("siteData")
     .doc("messages")
     .collection("messages")
-    .orderBy("timestamp", "asc") // Load in chronological order
+    .orderBy("timestamp", "desc")
     .onSnapshot(snapshot => {
-      const messages = [];
-      snapshot.forEach(doc => messages.push({ id: doc.id, data: doc.data(), doc }));
+      chatBox.innerHTML = "";
+      const messageMap = {};
+      const parentMap = {};
 
-      // Separate top-level and replies
-      const topLevel = messages.filter(msg => !msg.data.parentId);
-      const replies = messages.filter(msg => msg.data.parentId);
+      snapshot.docs.reverse().forEach(doc => {
+        const data = doc.data();
+        renderMessage(doc, messageMap);
 
-      // Sort top-level DESC (newest on top)
-      topLevel.sort((a, b) => b.data.timestamp?.toDate() - a.data.timestamp?.toDate());
+        // Organize replies under parents
+        if (data.parentId) {
+          parentMap[data.parentId] = parentMap[data.parentId] || [];
+          parentMap[data.parentId].push(doc.id);
+        }
+      });
 
-      // Map and render top-level messages
-      topLevel.forEach(msg => {
-        renderMessage(msg.doc, messageMap, chatBox, false);
-
-        // Find and render replies to this message (ASC)
-        const childReplies = replies.filter(r => r.data.parentId === msg.id);
-        childReplies.sort((a, b) => a.data.timestamp?.toDate() - b.data.timestamp?.toDate());
-
-        childReplies.forEach(reply => {
-          renderMessage(reply.doc, messageMap, chatBox, false);
-        });
+      // Nest replies under their parents
+      Object.keys(parentMap).forEach(parentId => {
+        const parentDiv = messageMap[parentId];
+        if (parentDiv) {
+          parentMap[parentId].forEach(replyId => {
+            const replyDiv = messageMap[replyId];
+            if (replyDiv) parentDiv.appendChild(replyDiv);
+          });
+        }
       });
     });
 }
