@@ -227,7 +227,7 @@ function listenToMessages() {
       const messageMap = {};
       const parentMap = {};
 
-      snapshot.docs.reverse().forEach(doc => {
+      snapshot.docs.forEach(doc => {
         const data = doc.data();
         renderMessage(doc, messageMap);
 
