@@ -142,7 +142,7 @@ document.getElementById("toggleCommandments").addEventListener("click", function
     })}`;
   }
 
-  function renderMessage(doc, messageMap, chatBox) {
+  function renderMessage(doc, messageMap, chatBox, prepend = false)
     const data = doc.data();
     const div = document.createElement("div");
     div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
@@ -168,7 +168,11 @@ document.getElementById("toggleCommandments").addEventListener("click", function
     if (data.parentId && messageMap[data.parentId]) {
       messageMap[data.parentId].appendChild(div);
     } else if (!data.parentId) {
-      chatBox.insertBefore(div, chatBox.firstChild);
+      if (prepend) {
+        chatBox.insertBefore(div, chatBox.firstChild);
+      } else {
+        chatBox.appendChild(div);
+      }
     }
 
     // Handle reactions
@@ -235,32 +239,37 @@ document.getElementById("toggleCommandments").addEventListener("click", function
 
   listenToMessages();
 
-  function loadMessages(initial = false) {
-    let query = db.collection("siteData").doc("messages").collection("messages")
-      .orderBy("timestamp", "desc")
-      .limit(5);
+function loadMessages(initial = false) {
+  let query = db.collection("siteData").doc("messages").collection("messages")
+    .orderBy("timestamp", "desc")
+    .limit(5);
 
-    if (lastVisible && !initial) {
-      query = query.startAfter(lastVisible);
+  if (lastVisible && !initial) {
+    query = query.startAfter(lastVisible);
+  }
+
+  query.get().then((snapshot) => {
+    if (snapshot.empty) {
+      loadMoreBtn.style.display = "none";
+      return;
     }
 
-    query.get().then((snapshot) => {
-      if (snapshot.empty) {
-        loadMoreBtn.style.display = "none";
-        return;
+    const docs = snapshot.docs;
+
+    // Update lastVisible for pagination
+    lastVisible = docs[docs.length - 1];
+
+    const messageMap = {};
+
+    // Reverse so they display oldest to newest (top to bottom)
+    docs.reverse().forEach(doc => {
+      if (!loadedMessages.includes(doc.id)) {
+        loadedMessages.push(doc.id);
+        renderMessage(doc, messageMap, chatBox, true); // prepend
       }
-
-      lastVisible = snapshot.docs[snapshot.docs.length - 1];
-      const messageMap = {};
-
-      snapshot.docs.reverse().forEach(doc => {
-        if (!loadedMessages.includes(doc.id)) {
-          loadedMessages.push(doc.id);
-          renderMessage(doc, messageMap, chatBox);
-        }
-      });
     });
-  }
+  });
+}
 
   loadMoreBtn.addEventListener("click", () => loadMessages());
   loadMessages(true);
