@@ -127,3 +127,27 @@ ul#leaderboard-list li {
 #chatMessages div {
   margin-bottom: 10px;
 }
+
+.chat-input-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  height: 44px; /* Match button height */
+  box-sizing: border-box;
+}
+
+#sendMessage {
+  height: 44px; /* Match input height */
+  white-space: nowrap;
+  flex-shrink: 0;
+}
