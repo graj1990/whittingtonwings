@@ -1,10 +1,12 @@
-// Imports and DOM Setup
-
 document.addEventListener("DOMContentLoaded", () => {
   const signInBtn = document.getElementById("signInBtn");
   const signOutBtn = document.getElementById("signOutBtn");
   const userDisplay = document.getElementById("userDisplay");
+  const messageInput = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendMessage");
+  const chatBox = document.getElementById("chatMessages");
 
+  // --- Sign In/Out ---
   signInBtn.addEventListener("click", () => {
     auth.signInWithPopup(provider).catch((error) => {
       console.error("Sign in error", error);
@@ -13,13 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   signOutBtn.addEventListener("click", () => auth.signOut());
 
-// Auth State Handling
-  
+  // --- Auth State Listener ---
   auth.onAuthStateChanged((user) => {
-    const messageInput = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendMessage");
     const authNotice = document.getElementById("authNotice");
-
     if (user) {
       signInBtn.style.display = "none";
       signOutBtn.style.display = "inline-block";
@@ -39,8 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-// Wing Night + Leaderboard Load
-
+  // --- Wing Night & Leaderboard ---
   db.collection("siteData").doc("wingNight").get().then((doc) => {
     if (doc.exists) {
       const data = doc.data();
@@ -64,12 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-// Chat Message Logic (Replies + Reactions + Descending Order)
-
-  const chatBox = document.getElementById("chatMessages");
-  const sendBtn = document.getElementById("sendMessage");
-  const messageInput = document.getElementById("messageInput");
-
+  // --- Chat Functions ---
   function formatTimestamp(timestamp) {
     const date = timestamp.toDate();
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
@@ -84,8 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
     div.className = data.parentId ? "chat-message chat-reply" : "chat-message";
     div.dataset.id = doc.id;
 
-    const timestamp = data.timestamp?.toDate();
-    const formattedTime = timestamp ? formatTimestamp(data.timestamp) : "Just now";
+    const formattedTime = data.timestamp?.toDate()
+      ? formatTimestamp(data.timestamp)
+      : "Just now";
 
     div.innerHTML = `
       <strong>${data.senderName || "Anon"}</strong>
@@ -107,6 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chatBox.appendChild(div);
     }
 
+    // --- Reactions ---
     div.querySelectorAll(".reaction-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         if (!window.currentUser) return alert("Sign in to react.");
@@ -134,6 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
+    // --- Replies ---
     div.querySelector(".reply-btn").addEventListener("click", () => {
       const reply = prompt("Reply to this message:");
       if (reply && window.currentUser) {
@@ -159,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .collection("messages")
       .orderBy("timestamp", "desc")
       .onSnapshot(snapshot => {
-        chatBox.innerHTML = ""; // reset on every update
+        chatBox.innerHTML = "";
         snapshot.docs.forEach(doc => {
           renderMessage(doc, messageMap);
         });
@@ -168,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   listenToMessages();
 
+  // --- Send Message ---
   sendBtn.addEventListener("click", () => {
     const text = messageInput.value.trim();
     if (!text) return;
@@ -188,4 +184,4 @@ document.addEventListener("DOMContentLoaded", () => {
       messageInput.value = "";
     });
   });
-}); // 👈 This closes the DOMContentLoaded event listener
+});
