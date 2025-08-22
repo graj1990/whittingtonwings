@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = doc.data();
       document.getElementById("wingDate").textContent = data.date || "TBD";
       document.getElementById("wingLocation").textContent = data.location || "TBD";
+      document.getElementById("wingTheme").textContent = data.theme || "TBD";
     }
   });
 
