@@ -61,12 +61,21 @@ db.collection("siteData").doc("leaderboard").get().then((doc) => {
   if (doc.exists) {
     const winners = doc.data().Winners || [];
     winners.sort((a, b) => b.wins - a.wins);
+
     const container = document.getElementById("leaderboardContent");
     container.innerHTML = "";
+
     winners.forEach((winner, index) => {
       const div = document.createElement("div");
       const medal = ["🥇", "🥈", "🥉"][index] || "";
-      div.innerHTML = `${medal} ${winner.name} - ${winner.wins} wins`;
+
+      div.className = "leaderboard-row";
+      div.innerHTML = `
+        <span class="leaderboard-medal">${medal}</span>
+        <span class="leaderboard-name">${winner.name}</span>
+        <span class="leaderboard-wins">${winner.wins} win${winner.wins > 1 ? "s" : ""}</span>
+      `;
+
       container.appendChild(div);
     });
   }
