@@ -38,29 +38,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Wing Night & Leaderboard ---
-  db.collection("siteData").doc("wingNight").get().then((doc) => {
-    if (doc.exists) {
-      const data = doc.data();
-      document.getElementById("wingDate").textContent = data.date || "TBD";
-      document.getElementById("wingLocation").textContent = data.location || "TBD";
-      document.getElementById("wingTheme").textContent = data.theme || "TBD";
-    }
-  });
+db.collection("siteData").doc("wingNight").get().then((doc) => {
+  if (doc.exists) {
+    const data = doc.data();
 
-  db.collection("siteData").doc("leaderboard").get().then((doc) => {
-    if (doc.exists) {
-      const winners = doc.data().Winners || [];
-      winners.sort((a, b) => b.wins - a.wins);
-      const container = document.getElementById("leaderboardContent");
-      container.innerHTML = "";
-      winners.forEach((winner, index) => {
-        const div = document.createElement("div");
-        const medal = ["🥇", "🥈", "🥉"][index] || "";
-        div.innerHTML = `${medal} ${winner.name} - ${winner.wins} wins`;
-        container.appendChild(div);
-      });
+    document.getElementById("wingDate").textContent = data.date || "TBD";
+    document.getElementById("wingLocation").textContent = data.location || "TBD";
+    document.getElementById("wingTheme").textContent = data.theme || "TBD";
+
+    // --- Button Logic ---
+    const button = document.getElementById("wingButton");
+
+    if (button && data.buttonUrl) {
+      button.href = data.buttonUrl;
+      button.textContent = data.buttonText || "Learn More";
+      button.style.display = "inline-block";
     }
-  });
+  }
+});
+
+db.collection("siteData").doc("leaderboard").get().then((doc) => {
+  if (doc.exists) {
+    const winners = doc.data().Winners || [];
+    winners.sort((a, b) => b.wins - a.wins);
+    const container = document.getElementById("leaderboardContent");
+    container.innerHTML = "";
+    winners.forEach((winner, index) => {
+      const div = document.createElement("div");
+      const medal = ["🥇", "🥈", "🥉"][index] || "";
+      div.innerHTML = `${medal} ${winner.name} - ${winner.wins} wins`;
+      container.appendChild(div);
+    });
+  }
+});
 
 // --- Wing Commandments Toggle ---
 const toggleBtn = document.getElementById("toggleCommandments");
