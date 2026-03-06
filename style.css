@@ -45,6 +45,41 @@ ul#leaderboard-list li {
   font-size: 1.1em;
 }
 
+/* Leaderboard */
+#leaderboardContent {
+  margin-top: 10px;
+  max-width: 260px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 15px;
+}
+
+.leaderboard-row + .leaderboard-row {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.leaderboard-medal {
+  text-align: center;
+}
+
+.leaderboard-name {
+  text-align: center;
+  font-weight: 500;
+}
+
+.leaderboard-wins {
+  color: #555;
+  font-size: 14px;
+  text-align: right;
+}
+
 /* Wing Commandments */
 .wing-text p {
   margin-bottom: 12px;
